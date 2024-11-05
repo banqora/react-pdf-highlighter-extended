@@ -42,6 +42,7 @@ import { HighlightLayer } from "./HighlightLayer";
 import { MouseSelection } from "./MouseSelection";
 import { TipContainer } from "./TipContainer";
 
+import type { PDFViewerOptions } from "pdfjs-dist/types/web/pdf_viewer";
 import type { EventBus as TEventBus, PDFLinkService as TPDFLinkService, PDFViewer as TPDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
 
 let EventBus: typeof TEventBus, PDFLinkService: typeof TPDFLinkService, PDFViewer: typeof TPDFViewer;
@@ -166,6 +167,11 @@ export interface PdfHighlighterProps {
    * other style props like `textSelectionColor` or overwrite pdf_viewer.css
    */
   style?: CSSProperties;
+
+  /**
+   * Options passed down to the PDF.js PDFViewer.
+   */
+  pdfViewerOptions?: Omit<PDFViewerOptions, "container" | "eventBus" | "linkService">
 }
 
 /**
@@ -193,6 +199,7 @@ export const PdfHighlighter = ({
   textSelectionColor = DEFAULT_TEXT_SELECTION_COLOR,
   utilsRef,
   style,
+  pdfViewerOptions,
 }: PdfHighlighterProps) => {
   // State
   const [tip, setTip] = useState<Tip | null>(null);
@@ -233,6 +240,7 @@ export const PdfHighlighter = ({
           textLayerMode: 2,
           removePageBorders: true,
           linkService: linkServiceRef.current,
+          ...pdfViewerOptions,
         });
 
       viewerRef.current.setDocument(pdfDocument);
@@ -400,6 +408,7 @@ export const PdfHighlighter = ({
         const { textLayer } =
           viewerRef.current!.getPageView(pageNumber - 1) || {};
         if (!textLayer) continue; // Viewer hasn't rendered page yet
+        if (!textLayer.div) continue;
 
         // textLayer.div for version >=3.0 and textLayer.textLayerDiv otherwise.
         const highlightLayer = findOrCreateHighlightLayer(
